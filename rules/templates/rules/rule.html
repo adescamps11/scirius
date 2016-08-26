@@ -22,6 +22,7 @@
 <div class="panel-body">
 <ul>
 	<li><a href="{{ kibana_url }}/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-{{ date }},mode:quick,to:now))&_a=(columns:!(_source),filters:!(),index:'logstash-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'alert.signature_id:{{ rule.sid }}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:_source,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=logstash-*&type=histogram" target="_">Events list</a></li>
+</ul>
 </div>
 {% endif %}
 {% if request.user.is_staff %}
@@ -54,6 +55,15 @@
 <a href="{% url 'delete_alerts' rule.sid %}">Delete generated alerts</a>
 </li>
 {% endif %}
+<li>
+<a href="{% url 'alert_rule' rule.sid %}">Alert rule</a>
+</li>
+<li>
+<a href="{% url 'allow_rule' rule.sid %}">Allow rule</a>
+</li>
+<li>
+<a href="{% url 'drop_rule' rule.sid %}">Drop rule</a>
+</li>
 </ul>
 </div>
 {% endif %}

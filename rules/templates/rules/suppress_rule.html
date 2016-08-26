@@ -6,8 +6,14 @@
 {% if form %}
 {% if operation == 'suppress' %}
 <h4>Disable rule {{ rule.sid }} from</h4>
-{% else %}
+{% elif operation == 'enable' %}
 <h4>Enable rule {{ rule.sid }} in</h4>
+{% elif operation == 'alert' %}
+<h4>Alert rule {{ rule.sid }} in</h4>
+{% elif operation == 'allow' %}
+<h4>Allow rule {{ rule.sid }} in</h4>
+{% elif operation == 'drop' %}
+<h4>Drop rule {{ rule.sid }} in</h4>
 {% endif %}
 <div class="container-fluid">
 <div class="row">
@@ -15,15 +21,26 @@
 
 {% if operation == 'suppress' %}
 <form class="form" action="{% url 'suppress_rule' rule.sid %}" method="post">
-{% else %}
+{% elif operation == 'enable' %}
 <form class="form" action="{% url 'enable_rule' rule.sid %}" method="post">
+{% elif operation == 'alert' %}
+<form class="form" action="{% url 'alert_rule' rule.sid %}" method="post">
+{% elif operation == 'allow' %}
+<form class="form" action="{% url 'allow_rule' rule.sid %}" method="post">
+{% elif operation == 'drop' %}
+<form class="form" action="{% url 'drop_rule' rule.sid %}" method="post">
 {% endif %}
 
 {% csrf_token %}
     {% bootstrap_form form %}
 
 {% if rules %}
-This will also {% if operation == 'suppress' %}disable{% else %}enable{% endif %} the following rules due to flowbits dependencies:
+This will also {% if operation == 'suppress' %}disable
+    {% elif operation == 'enable' %}enable
+    {% elif operation == 'alert' %}alert
+    {% elif operation == 'allow' %}allow
+    {% elif operation == 'drop' %}drop
+{% endif %} the following rules due to flowbits dependencies:
 {% load render_table from django_tables2 %}
 {% render_table rules %}
 {% endif %}
@@ -32,13 +49,18 @@ This will also {% if operation == 'suppress' %}disable{% else %}enable{% endif %
         <button type="submit" class="btn btn-primary">
 {% if operation == 'suppress' %}
             {% bootstrap_icon "ok" %} Disable
-{% else %}
+{% elif operation == 'enable' %}
             {% bootstrap_icon "ok" %} Enable
+{% elif operation == 'alert' %}
+            {% bootstrap_icon "ok" %} Alert rule
+{% elif operation == 'allow' %}
+            {% bootstrap_icon "ok" %} Allow rule
+{% elif operation == 'drop' %}
+            {% bootstrap_icon "ok" %} Drop rule
 {% endif %}
         </button>
     {% endbuttons %}
 </form>
-
 </div>
 </div>
 </div>

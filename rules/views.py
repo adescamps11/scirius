@@ -306,6 +306,7 @@ def influxdb(request):
 def rule(request, rule_id, key = 'pk'):
     if request.is_ajax():
         rule = get_object_or_404(Rule, sid=rule_id)
+        #TODO Check transformation and use function content_updated
         rule.highlight_content = SuriHTMLFormat(rule.content)
         data = { 'msg': rule.msg, 'sid': rule.sid, 'content': rule.content,
                  'highlight_content': rule.highlight_content}
@@ -342,7 +343,7 @@ def rule(request, rule_id, key = 'pk'):
         threshold = 'No'
         if Threshold.objects.filter(rule = rule, ruleset = ruleset):
             threshold = 'Yes'
-        rulesets_status.append({'name': ruleset.name, 'pk':ruleset.pk, 'status':status, 'validity': 'Unknown', 'threshold': threshold})
+        rulesets_status.append({'name': ruleset.name, 'pk': ruleset.pk, 'status': status, 'validity': 'Unknown', 'threshold': threshold, 'action': rule.transformation_type(ruleset)})
     rulesets_status = StatusRulesetTable(rulesets_status)
     tables.RequestConfig(request).configure(rulesets_status)
 
@@ -383,6 +384,8 @@ def switch_rule(request, rule_id, operation = 'suppress'):
                     rule_object.disable(ruleset)
                 elif operation == 'enable':
                     rule_object.enable(ruleset)
+                elif operation == 'alert' or operation == 'allow' or operation == 'drop':
+                    rule_object.transform(operation, ruleset)
                 ruleset.save()
         return redirect(rule_object)
     form = RulesetSuppressForm()
@@ -400,6 +403,15 @@ def suppress_rule(request, rule_id):
 
 def enable_rule(request, rule_id):
     return switch_rule(request, rule_id, operation='enable')
+
+def alert_rule(request, rule_id):
+    return switch_rule(request, rule_id, operation='alert')
+
+def allow_rule(request, rule_id):
+    return switch_rule(request, rule_id, operation='allow')
+
+def drop_rule(request, rule_id):
+    return switch_rule(request, rule_id, operation='drop')
 
 def test_rule(request, rule_id, ruleset_id, key = 'pk'):
     rule_object = get_object_or_404(Rule, pk=rule_id)
@@ -537,6 +549,9 @@ def suppress_category(request, cat_id, operation = 'suppress'):
                     ruleset.categories.remove(cat_object)
                 elif operation == 'enable':
                     ruleset.categories.add(cat_object)
+                elif operation == 'alert' or operation == 'allow' or operation == 'drop':
+                    for rule_obj in Rule.objects.filter(category=cat_object):
+                        rule_obj.transform(operation, ruleset)
                 ruleset.needs_test()
                 ruleset.save()
         return redirect(cat_object)
@@ -546,6 +561,15 @@ def suppress_category(request, cat_id, operation = 'suppress'):
 
 def enable_category(request, cat_id):
     return suppress_category(request, cat_id, operation='enable')
+
+def alert_category(request, cat_id):
+    return suppress_category(request, cat_id, operation='alert')
+
+def allow_category(request, cat_id):
+    return suppress_category(request, cat_id, operation='allow')
+
+def drop_category(request, cat_id):
+    return suppress_category(request, cat_id, operation='drop')
 
 def update_source(request, source_id):
     src = get_object_or_404(Source, pk=source_id)

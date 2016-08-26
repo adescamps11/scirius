@@ -56,8 +56,12 @@ class Suricata(models.Model):
         rfile.write(header.encode('utf-8'))
         for rule in rules:
             try:
+                #TODO Update with the transmision class
+                # Would be: rfile.write(rule.content_updated(self.ruleset))
                 rfile.write(rule.content)
             except:
+                #TODO Update with the transmision class
+                # Would be: rfile.write(rule.content_updated(self.ruleset).encode('utf-8'))
                 rfile.write(rule.content.encode('utf-8'))
         rfile.close()
         # export files at version

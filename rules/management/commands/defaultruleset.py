@@ -19,7 +19,7 @@ along with Scirius.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from django.core.management.base import BaseCommand, CommandError
-from rules.models import Ruleset, SourceAtVersion, Category
+from rules.models import Ruleset, SourceAtVersion, Category, Rule, Transformation
 from datetime import datetime
 
 class Command(BaseCommand):
@@ -45,6 +45,10 @@ class Command(BaseCommand):
             ruleset.sources.add(source)
         for cat in categories:
             ruleset.categories.add(cat)
+        trans_array = []
+        for rule in Rule.objects.filter(category = cat):
+            trans_array.append(Transformation(datatype='alert', ruleset=ruleset, rule=rule))
+        Transformation.objects.bulk_create(trans_array)
         ruleset.save()
         self.stdout.write('Successfully created default ruleset "%s"' % name)
 

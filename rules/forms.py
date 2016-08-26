@@ -20,7 +20,7 @@ along with Scirius.  If not, see <http://www.gnu.org/licenses/>.
 
 from django import forms
 from django.utils import timezone
-from rules.models import Ruleset, Source, Category, SourceAtVersion, SystemSettings, Threshold
+from rules.models import Ruleset, Source, Category, SourceAtVersion, SystemSettings, Threshold, Rule, Transformation
 
 class SystemSettingsForm(forms.ModelForm):
     class Meta:
@@ -74,7 +74,13 @@ class RulesetForm(forms.Form):
             ruleset.sources.add(src)
             if self.cleaned_data['activate_categories']:
                 for cat in Category.objects.filter(source = src.source):
+                    print cat.name
                     ruleset.categories.add(cat)
+                    trans_array = []
+                    for rule in Rule.objects.filter(category = cat):
+                        trans_array.append(Transformation(datatype='alert', ruleset=ruleset, rule=rule))
+                    Transformation.objects.bulk_create(trans_array)
+
         return ruleset
 
     def __init__(self, *args, **kwargs):

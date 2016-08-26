@@ -105,8 +105,9 @@ class StatusRulesetTable(tables.Table):
     status = tables.Column(verbose_name='Status in ruleset')
     threshold = tables.Column(verbose_name='Threshold')
     validity = tables.Column(verbose_name='Operational status')
+    action = tables.Column(verbose_name='Action in ruleset')
     class Meta(DefaultMeta):
-        fields = ("name", "status", "threshold", "validity")
+        fields = ("name", "status", "threshold", "validity", "action")
         attrs = { 'id': 'rulesets', 'class': 'paleblue' }
 
 class RuleStatsTable(tables.Table):
