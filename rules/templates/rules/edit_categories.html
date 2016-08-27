@@ -1,0 +1,79 @@
+{% extends "rules/base.html" %}
+{% load bootstrap3  %}
+
+{% block sidebar %}
+<div class="panel-heading">
+    <h2 class="panel-title">{{ source.name|capfirst}}</h2>
+</div>
+<ul>
+    {% if source.descr %}
+    <li><span class="type">Description:</span> {{ source.descr }}</li>
+    {% endif %}
+    <li><span class="type">Created:</span> {{ source.created_date }}</li>
+    {% if source.updated_date %}
+    <li><span class="type">Updated:</span> {{ source.updated_date }}</li>
+    {% endif %}
+</ul>
+
+{% endblock %}
+
+{% block body %}
+<body onload="tables2_checking();" >
+{% endblock %}
+
+{% block content %}
+
+<script language="JavaScript">
+    function tables2_toggle(source, name) {
+        $( source ).parents('table').find("input").prop('checked', source.checked)
+    }
+    function tables2_checking() {
+        var arr = [{{ categories_selection }}];
+        checkboxes = document.getElementsByName('category_selection');
+        for (var i in checkboxes) {
+            if  (arr.indexOf(parseInt(checkboxes[i].value)) > -1) {
+                checkboxes[i].checked = 1;
+            }
+        }
+    }
+
+
+</script>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6">
+            <h2>Edit categories in {{ source.name }}</h2>
+            Choose an operation in the actions below:
+        </div>
+    </div>
+</div>
+
+<form action="{% url 'edit_categories' source.pk %}" method="post">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                <h2>Choose rulesets</h2>
+                {% csrf_token %}
+                {% bootstrap_form form %}
+            </div>
+        </div>
+    </div>
+
+    {% load render_table from django_tables2 %}
+    <h2 class="title">Choose categories</h2>
+
+    {% csrf_token %}
+    {% render_table categories %}
+    <input type="hidden" name="rules" value="rules">
+    <p></p>
+    <div>
+        <input type="submit"  name="alert" class="btn btn-primary" value="Alert Categories" />
+        <input type="submit"  name="allow" class="btn btn-success" value="Allow Categories" />
+        <input type="submit"  name="drop" class="btn btn-danger" value="Drop Categories" />
+    </div>
+</form>
+
+
+{% endblock %}

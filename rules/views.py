@@ -333,8 +333,8 @@ def rule(request, rule_id, key = 'pk'):
         elif refer.key == 'bugtraq':
             refer.url = "http://www.securityfocus.com/bid/" + refer.value
         references.append(refer)
-    # build table of rulesets and display if rule is active
-    rulesets = Ruleset.objects.all()
+    # build table of rulesets and display if rule is active all() // Changed to filter() to only show set rulesets
+    rulesets = Ruleset.objects.filter(rule=rule)
     rulesets_status = []
     for ruleset in rulesets:
         status = 'Inactive'
@@ -388,7 +388,7 @@ def switch_rule(request, rule_id, operation = 'suppress'):
                     rule_object.transform(operation, ruleset)
                 ruleset.save()
         return redirect(rule_object)
-    form = RulesetSuppressForm()
+    form = RulesetSuppressForm(rulesets=Ruleset.objects.filter(rule=rule_object))
     rules = rule_object.get_flowbits_group()
     context = { 'rule': rule_object, 'form': form }
     if len(rules):
@@ -555,7 +555,8 @@ def suppress_category(request, cat_id, operation = 'suppress'):
                 ruleset.needs_test()
                 ruleset.save()
         return redirect(cat_object)
-    form = RulesetSuppressForm()
+    rulesets = Ruleset.objects.filter(rule=Rule.objects.filter(category=cat_object).first())
+    form = RulesetSuppressForm(rulesets=rulesets)
     context = { 'category': cat_object, 'form': form, 'operation': operation }
     return scirius_render(request, 'rules/suppress_category.html', context)
 
@@ -601,7 +602,8 @@ def edit_rules(request, cat_id):
         rules_selection = []
         rules = EditRuleTable(Rule.objects.filter(category=category))
         tables.RequestConfig(request, paginate=True).configure(rules)
-        form = RulesetSuppressForm()
+        rulesets = Ruleset.objects.filter(rule=Rule.objects.filter(category=category).first())
+        form = RulesetSuppressForm(rulesets=rulesets)
         context = {'category': category, 'rules': rules, 'rules_selection': ", ".join(rules_selection), 'form': form}
         for rule in Rule.objects.filter(category=category):
             rules_selection.append(rule.pk)
@@ -765,6 +767,51 @@ def sourceupdate(request, update_id):
     diff = sourceupdate.diff()
     build_source_diff(request, diff)
     return scirius_render(request, 'rules/source.html', { 'source': source, 'diff': diff, 'src_update': sourceupdate })
+
+def edit_categories(request, source_id):
+    source = get_object_or_404(Source, pk=source_id)
+
+    if not request.user.is_staff:
+        return scirius_render(request, 'rules/edit_categories.html', {'source': source, 'error': 'Unsufficient permissions'})
+
+    if request.method == 'POST': # If the form has been submitted...
+        form = RulesetSuppressForm(request.POST)
+        if form.is_valid(): # All validation rules pass
+            rulesets = form.cleaned_data['rulesets']
+            for ruleset_pk in rulesets:
+                ruleset = get_object_or_404(Ruleset, pk=ruleset_pk)
+                for cat in request.POST.getlist('category_selection'):
+                    for rule in Rule.objects.filter(category=cat):
+                        if 'alert' in request.POST:
+                            rule.transform('alert', ruleset=ruleset)
+                        elif 'allow' in request.POST:
+                            rule.transform('allow', ruleset=ruleset)
+                        elif 'drop' in request.POST:
+                            rule.transform('drop', ruleset=ruleset)
+        return redirect(source)
+    else:
+        categories_selection = []
+        categories = EditCategoryTable(Category.objects.filter(source=source))
+        tables.RequestConfig(request, paginate=True).configure(categories)
+        rulesets = []
+        for cat in Category.objects.filter(source=source):
+            rs = Ruleset.objects.filter(categories=cat)
+            if not rulesets:
+                rulesets = rs
+            else:
+                for rs2 in rulesets:
+                    if rs2 not in rs:
+                        rulesets.remove(rs2)
+        if not rulesets:
+            return scirius_render(request, 'rules/edit_categories.html', {'source': source, 'error': 'No rulesets available'})
+        print rulesets
+        form = RulesetSuppressForm(rulesets=rulesets)
+        context = {'source': source, 'categories': categories, 'categories_selection': ", ".join(categories_selection), 'form': form}
+        for cat in Category.objects.filter(source=source):
+            categories_selection.append(cat.pk)
+        context['categories'] = categories
+        context['categories_selection'] = categories_selection
+        return scirius_render(request, 'rules/edit_categories.html', context)
 
 def rulesets(request):
     return scirius_listing(request, Ruleset, 'Rulesets')
