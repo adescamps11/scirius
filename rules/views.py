@@ -571,6 +571,44 @@ def allow_category(request, cat_id):
 def drop_category(request, cat_id):
     return suppress_category(request, cat_id, operation='drop')
 
+def edit_rules(request, cat_id):
+    category = get_object_or_404(Category, id=cat_id)
+
+    if not request.user.is_staff:
+        return scirius_render(request, 'rules/edit_rules.html', {'category': category, 'error': 'Unsufficient permissions'})
+
+    if request.method == 'POST': # If the form has been submitted...
+        form = RulesetSuppressForm(request.POST)
+        if form.is_valid(): # All validation rules pass
+            rulesets = form.cleaned_data['rulesets']
+            for ruleset_pk in rulesets:
+                ruleset = get_object_or_404(Ruleset, pk=ruleset_pk)
+                if 'alert' in request.POST:
+                    print ruleset.name
+                    for rule_ob in request.POST.getlist('rule_selection'):
+                        rule = Rule.objects.get(pk=rule_ob)
+                        rule.transform('alert', ruleset=ruleset)
+                elif 'allow' in request.POST:
+                    for rule_ob in request.POST.getlist('rule_selection'):
+                        rule = Rule.objects.get(pk=rule_ob)
+                        rule.transform('allow', ruleset=ruleset)
+                elif 'drop' in request.POST:
+                    for rule_ob in request.POST.getlist('rule_selection'):
+                        rule = Rule.objects.get(pk=rule_ob)
+                        rule.transform('drop', ruleset=ruleset)
+        return redirect(category)
+    else:
+        rules_selection = []
+        rules = EditRuleTable(Rule.objects.filter(category=category))
+        tables.RequestConfig(request, paginate=True).configure(rules)
+        form = RulesetSuppressForm()
+        context = {'category': category, 'rules': rules, 'rules_selection': ", ".join(rules_selection), 'form': form}
+        for rule in Rule.objects.filter(category=category):
+            rules_selection.append(rule.pk)
+        context['rules'] = rules
+        context['rules_selection'] = rules_selection
+        return scirius_render(request, 'rules/edit_rules.html', context)
+
 def update_source(request, source_id):
     src = get_object_or_404(Source, pk=source_id)
 

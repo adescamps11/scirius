@@ -1,0 +1,77 @@
+{% extends "rules/base.html" %}
+{% load bootstrap3  %}
+
+{% block sidebar %}
+<div class="panel-heading">
+    <h2 class="panel-title">{{ category.name|capfirst}}</h2>
+</div>
+<ul>
+    <li><span class="type">Filename:</span> {{ category.filename}}</li>
+    <li><span class="type">Created:</span> {{ category.created_date}}</li>
+</ul>
+<div class="panel-heading">
+    <h2 class="panel-title">Action</h2>
+</div>
+
+{% endblock %}
+
+{% block body %}
+<body onload="tables2_checking();" >
+{% endblock %}
+
+{% block content %}
+
+<script language="JavaScript">
+    function tables2_toggle(source, name) {
+        $( source ).parents('table').find("input").prop('checked', source.checked)
+    }
+    function tables2_checking() {
+        var arr = [{{ rules_selection }}];
+        checkboxes = document.getElementsByName('rule_selection');
+        for (var i in checkboxes) {
+            if  (arr.indexOf(parseInt(checkboxes[i].value)) > -1) {
+                checkboxes[i].checked = 1;
+            }
+        }
+    }
+
+
+</script>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6">
+            <h2>Edit rules in {{ category.name }}</h2>
+            Choose an operation in the actions below:
+        </div>
+    </div>
+</div>
+
+<form action="{% url 'edit_rules' category.id %}" method="post">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                <h2>Choose rulesets</h2>
+                    {% csrf_token %}
+                    {% bootstrap_form form %}
+            </div>
+        </div>
+    </div>
+
+    {% load render_table from django_tables2 %}
+    <h2 class="title">Choose rules</h2>
+
+    {% csrf_token %}
+        {% render_table rules %}
+        <input type="hidden" name="rules" value="rules">
+        <p></p>
+        <div>
+            <input type="submit"  name="alert" class="btn btn-primary" value="Alert Rules" />
+            <input type="submit"  name="allow" class="btn btn-success" value="Allow Rules" />
+            <input type="submit"  name="drop" class="btn btn-danger" value="Drop Rules" />
+        </div>
+</form>
+
+
+{% endblock %}
